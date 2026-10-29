@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Prochains métros</title>
+<link rel="icon" type="image/svg+xml" href="logos/logo_metro.svg">
 <style>
 
   @font-face {
@@ -101,6 +102,22 @@
   .ligne.on {
     opacity: 1;
     transform: scale(1.2);
+  }
+
+  .ligne:focus-visible {
+    outline: 3px solid #08007C;
+    outline-offset: 3px;
+    opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .ligne:hover {
+      opacity: 1;
+      transform: scale(1.14);
+    }
+    .ligne.on:hover {
+      transform: scale(1.28);
+    }
   }
 
   #q {
@@ -243,7 +260,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    cursor: pointer;
     background: none;
     border: none;
     font-family: inherit;
@@ -300,11 +316,24 @@
     background: var(--c);
   }
 
-  #back {
+  #ctrl {
     position: fixed;
     right: 12px;
     top: 12px;
-    background: #0008;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s;
+  }
+
+  #ctrl.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #ctrl button {
+    background: #000a;
     color: #fff;
     border: none;
     border-radius: 20px;
@@ -312,11 +341,16 @@
     font: inherit;
     font-size: 14px;
     cursor: pointer;
-    opacity: .35;
   }
 
-  #back:hover {
-    opacity: 1;
+  #ctrl button:hover,
+  #ctrl button:focus-visible {
+    background: #000;
+    outline: none;
+  }
+
+  body.idle #board {
+    cursor: none;
   }
 </style>
 </head>
@@ -342,7 +376,7 @@
       <div class="rond m" id="lm">M</div>
       <div class="rond" id="ll"></div>
     </div>
-    <button id="dir" title="Changer de direction"></button>
+    <div id="dir"></div>
   </div>
   <div id="mid">
     <div class="col">
@@ -355,7 +389,10 @@
     </div>
   </div>
   <div id="bar"></div>
-  <button id="back">Changer d’arrêt</button>
+  <div id="ctrl">
+    <button id="chdir">Changer de direction</button>
+    <button id="back">Changer d’arrêt</button>
+  </div>
 </div>
 
 <script>
@@ -373,6 +410,8 @@
 
   const $ = id => document.getElementById(id);
   const show = id => ["menu", "dirs", "board"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+  const REFRESH_MS = 15000;
+  let busy = false, hideT = null;
   let ligne = "10", stations = [], station = null, curDest = null, passages = [], timer = null;
 
   function pastille(el, l) {
@@ -518,12 +557,27 @@
     render();
     refresh();
     clearInterval(timer);
-    timer = setInterval(refresh, 60000);
+    timer = setInterval(refresh, REFRESH_MS);
+    wake();
   }
 
   async function refresh() {
+    if (busy || document.hidden) return;
+    busy = true;
     try { passages = await fetchPassages(); } catch (e) {}
+    busy = false;
     render();
+  }
+
+  function wake() {
+    if ($("board").classList.contains("hidden")) return;
+    $("ctrl").classList.add("show");
+    document.body.classList.remove("idle");
+    clearTimeout(hideT);
+    hideT = setTimeout(() => {
+      $("ctrl").classList.remove("show");
+      document.body.classList.add("idle");
+    }, 3000);
   }
 
   function render() {
@@ -537,23 +591,26 @@
 
   setInterval(() => !$("board").classList.contains("hidden") && render(), 15000);
 
-  $("dir").onclick = () => chooseStation(station);
+  $("chdir").onclick = () => chooseStation(station);
+  ["mousemove", "touchstart", "keydown"].forEach(ev => document.addEventListener(ev, wake, {passive: true}));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && !$("board").classList.contains("hidden")) refresh(); });
   $("back").onclick = () => { clearInterval(timer); show("menu"); };
   $("dback").onclick = () => show("menu");
   $("q").addEventListener("input", renderResults);
 
-  buildLignes();
-  loadStations();
-  
+  let saved = null;
   try {
-    const s = JSON.parse(localStorage.getItem("metro") || "null");
-    if (s?.station) { 
-      ligne = s.ligne; 
-      station = s.station; 
-      document.querySelectorAll(".ligne").forEach((b, i) => b.classList.toggle("on", ORDRE[i] === ligne)); 
-      openBoard(s.dest); 
+    const sv = JSON.parse(localStorage.getItem("metro") || "null");
+    if (sv?.station) {
+      ligne = sv.ligne;
+      station = sv.station;
+      saved = sv;
     }
   } catch (e) {}
+
+  buildLignes();
+  loadStations();
+  if (saved) openBoard(saved.dest);
 </script>
 </body>
 </html>
