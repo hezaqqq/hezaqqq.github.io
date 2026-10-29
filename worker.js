@@ -46,11 +46,18 @@ export default {
       const upstream = await fetch(apiUrl.toString(), {
         headers: { "Accept": "application/json", "apikey": env.API_KEY },
       });
-      const body = await upstream.text();
+      const buf = await upstream.arrayBuffer();
+      let body;
+      try {
+        body = new TextDecoder("utf-8", { fatal: true }).decode(buf);
+      } catch (e) {
+        body = new TextDecoder("windows-1252").decode(buf);
+      }
+      const type = (upstream.headers.get("Content-Type") || "application/json").replace(/;\s*charset=[^;]*/i, "");
       return corsResponse(env, body, {
         status: upstream.status,
         headers: {
-          "Content-Type": upstream.headers.get("Content-Type") || "application/json; charset=utf-8",
+          "Content-Type": type + "; charset=utf-8",
           "Cache-Control": "no-store",
         },
       });
