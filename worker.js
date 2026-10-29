@@ -31,7 +31,7 @@ export default {
     }
 
     const ref = url.searchParams.get("MonitoringRef");
-    if (!ref || !/^STIF:StopPoint:Q:[A-Za-z0-9_-]+:$/.test(ref)) {
+    if (!ref || !/^STIF:(StopPoint:Q|StopArea:SP):[A-Za-z0-9_-]+:$/.test(ref)) {
       return corsResponse(env, "Référence invalide", { status: 400 });
     }
     if (!env.API_KEY) {
