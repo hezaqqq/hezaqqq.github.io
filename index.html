@@ -459,6 +459,11 @@
     img.src = `logos/ligne_${l}.svg`;
   }
 
+  const LOGOS = {
+    metro: ["logo_metro.svg", "logo_Metro.svg"],
+    rer: ["logo_RER.svg", "logo_rer.svg", "logo_Rer.svg"],
+    transilien: ["logo_Transilien.svg", "logo_transilien.svg", "logo_TRANSILIEN.svg", "logo_transcilien.svg"]
+  };
   let logoTok = 0;
   function logoMode(kind) {
     const e = $("lm"), tok = ++logoTok;
@@ -466,15 +471,25 @@
     e.className = "rond m" + sq;
     e.style.background = "";
     e.textContent = MARQUE[kind];
-    const img = new Image();
-    img.onload = () => {
+    const files = LOGOS[kind];
+    const essai = i => {
       if (tok !== logoTok) return;
-      e.className = "rond" + sq;
-      e.style.background = "none";
-      e.innerHTML = "";
-      e.appendChild(img);
+      if (i >= files.length) {
+        console.warn("[logo] aucun fichier trouvé dans logos/ parmi :", files.join(", "));
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        if (tok !== logoTok) return;
+        e.className = "rond" + sq;
+        e.style.background = "none";
+        e.innerHTML = "";
+        e.appendChild(img);
+      };
+      img.onerror = () => essai(i + 1);
+      img.src = "logos/" + files[i];
     };
-    img.src = `logos/logo_${kind}.svg`;
+    essai(0);
   }
 
   function buildLignes() {
@@ -551,6 +566,18 @@
     renderResults();
   }
 
+  const CP1252 = {"€":128,"‚":130,"ƒ":131,"„":132,"…":133,"†":134,"‡":135,"ˆ":136,"‰":137,"Š":138,"‹":139,"Œ":140,"Ž":142,"‘":145,"’":146,"“":147,"”":148,"•":149,"–":150,"—":151,"˜":152,"™":153,"š":154,"›":155,"œ":156,"ž":158,"Ÿ":159};
+  function fixEnc(t) {
+    if (!/[ÃÂ]/.test(t)) return t;
+    const chars = [...t];
+    if (chars.some(c => !(c in CP1252) && c.charCodeAt(0) > 255)) return t;
+    try {
+      return new TextDecoder("utf-8", {fatal: true}).decode(Uint8Array.from(chars, c => CP1252[c] ?? c.charCodeAt(0)));
+    } catch (e) {
+      return t;
+    }
+  }
+
   const norm = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   function renderResults() {
@@ -587,7 +614,7 @@
     }).map(v => {
       const j = v.MonitoredVehicleJourney, c = j.MonitoredCall || {};
       const t = c.ExpectedDepartureTime || c.ExpectedArrivalTime || c.AimedDepartureTime || c.AimedArrivalTime;
-      const dest = j.DestinationName?.[0]?.value || j.DirectionName?.[0]?.value || "";
+      const dest = fixEnc(j.DestinationName?.[0]?.value || j.DirectionName?.[0]?.value || "");
       return {t: new Date(t).getTime(), dest, off: c.DepartureStatus === "cancelled"};
     }).filter(p => p.t && !p.off).sort((a, b) => a.t - b.t);
   }
