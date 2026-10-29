@@ -369,6 +369,56 @@
   body.idle #board {
     cursor: none;
   }
+
+  /* ===== Correctifs UI ===== */
+
+  /* Logos du bandeau à taille explicite (la direction reste collée au logo métro) */
+  #head { --lg: 15vh; padding-left: max(3vw, env(safe-area-inset-left)); }
+  #head .logos { height: auto; gap: 1.2vh; }
+  .rond { height: var(--lg); width: var(--lg); flex: none; aspect-ratio: auto; }
+  #dir { flex: 1 1 0; text-align: left; }
+
+  /* Chiffres longs type "1h05" */
+  .val.long { font-size: clamp(60px, 20vh, 260px); }
+
+  /* Téléphone en portrait uniquement */
+  @media (max-width: 700px) and (orientation: portrait) {
+
+    /* Menu : icônes plus grosses, sur plusieurs lignes (6 par ligne) */
+    .screen {
+      justify-content: flex-start;
+      overflow-y: auto;
+      gap: 2vh;
+      padding: calc(env(safe-area-inset-top, 0px) + 28px) 16px 24px;
+    }
+    #lignes, #lignes2 {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px 12px;
+      padding: 0;
+      margin-top: 0;
+      max-width: 460px;
+    }
+    .ligne, #lignes2 .ligne {
+      flex: 0 0 calc((100% - 5 * 12px) / 6);
+      max-width: none;
+    }
+
+    /* Tableau : logos et chiffres plus petits, direction visible */
+    #board { grid-template-rows: auto 1fr 4%; }
+    #head {
+      --lg: 11vw;
+      gap: 3vw;
+      padding: calc(env(safe-area-inset-top, 0px) + 10px) 4vw 10px;
+    }
+    #head .logos { gap: 2vw; }
+    #dir { font-size: 6vw; }
+    #mid { padding: 0 4vw; }
+    .col { padding-left: 3vw; gap: 1vh; }
+    .lab { font-size: 4vw; }
+    .val { min-height: 0; font-size: 26vw; }
+    .val.long { font-size: 14vw; }
+  }
 </style>
 </head>
 <body>
@@ -434,7 +484,6 @@
   const MOT = {metro: "métro", rer: "train", transilien: "train"};
   const MARQUE = {metro: "M", rer: "RER", transilien: "T"};
   const DATA = "https://data.iledefrance-mobilites.fr/api/explore/v2.1/catalog/datasets/arrets-lignes/exports/json";
-  
 
   const $ = id => document.getElementById(id);
   const show = id => ["menu", "dirs", "board"].forEach(s => $(s).classList.toggle("hidden", s !== id));
@@ -584,9 +633,9 @@
     const q = norm($("q").value.trim()), ul = $("res");
     ul.innerHTML = "";
     const list = stations.filter(s => norm(s.name).includes(q)).slice(0, 60);
-    if (!list.length) { 
-      ul.innerHTML = '<li class="info">Aucune station trouvée</li>'; 
-      return; 
+    if (!list.length) {
+      ul.innerHTML = '<li class="info">Aucune station trouvée</li>';
+      return;
     }
     list.forEach(s => {
       const li = document.createElement("li");
@@ -629,10 +678,10 @@
     try {
       passages = await fetchPassages();
       const dests = [...new Set(passages.map(p => p.dest).filter(Boolean))];
-      if (!dests.length) { 
-        $("dmsg").textContent = "Aucun passage prévu pour le moment."; 
-        addBtn("Afficher quand même", () => openBoard(null)); 
-        return; 
+      if (!dests.length) {
+        $("dmsg").textContent = "Aucun passage prévu pour le moment.";
+        addBtn("Afficher quand même", () => openBoard(null));
+        return;
       }
       $("dmsg").classList.add("hidden");
       dests.forEach(d => addBtn(d, () => openBoard(d)));
@@ -644,8 +693,8 @@
 
   function addBtn(txt, fn) {
     const b = document.createElement("button");
-    b.className = "btn"; 
-    b.textContent = txt; 
+    b.className = "btn";
+    b.textContent = txt;
     b.onclick = fn;
     $("dlist").appendChild(b);
   }
@@ -686,12 +735,19 @@
     }, 3000);
   }
 
+  const fmt = min =>
+    min < 60
+      ? String(min)
+      : Math.floor(min / 60) + "h" + (min % 60 ? String(min % 60).padStart(2, "0") : "");
+
   function render() {
     $("dir").textContent = curDest || station.name;
     const mine = passages.filter(p => !curDest || p.dest === curDest).slice(0, 2);
     [0, 1].forEach(i => {
-      const p = mine[i];
-      $("v" + (i + 1)).textContent = p ? Math.max(0, Math.floor((p.t - Date.now()) / 60000)) : "--";
+      const p = mine[i], el = $("v" + (i + 1));
+      const t = p ? fmt(Math.max(0, Math.floor((p.t - Date.now()) / 60000))) : "--";
+      el.textContent = t;
+      el.classList.toggle("long", t.length > 2);
     });
   }
 
