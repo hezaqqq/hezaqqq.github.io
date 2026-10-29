@@ -376,7 +376,11 @@
   #head { --lg: 15vh; padding-left: max(3vw, env(safe-area-inset-left)); }
   #head .logos { height: auto; gap: 1.2vh; }
   .rond { height: var(--lg); width: var(--lg); flex: none; aspect-ratio: auto; }
-  #dir { flex: 1 1 0; text-align: left; }
+  #dir { flex: 1 1 0; text-align: left; color: #08007C; }
+
+  /* Écrans scrollables (menu et directions) */
+  .screen { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  .screen > * { flex-shrink: 0; }
 
   /* Chiffres longs type "1h05" */
   .val.long { font-size: clamp(60px, 20vh, 260px); }
@@ -403,6 +407,10 @@
       flex: 0 0 calc((100% - 5 * 12px) / 6);
       max-width: none;
     }
+
+    /* Liste des arrêts : plus de hauteur fixe, c'est la page qui scrolle */
+    #res { height: auto; overflow: visible; }
+    #q { position: sticky; top: 0; z-index: 2; }
 
     /* Tableau : logos et chiffres plus petits, direction visible */
     #board { grid-template-rows: auto 1fr 4%; }
