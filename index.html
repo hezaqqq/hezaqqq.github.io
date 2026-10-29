@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prochains métros</title>
+<style>
+
+  @font-face {
+    font-family: "Parisine";
+    src: url("fonts/Parisine%20Bold.otf") format("opentype");
+    font-weight: 700;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    font-family: "Parisine", Arial, sans-serif;
+    font-weight: 700;
+    background: #000;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  img {
+    -webkit-user-drag: none;
+    pointer-events: none;
+  }
+
+  #q {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  .screen {
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+    background: #fff;
+    color: #08007C;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3vh;
+    padding: 20px;
+  }
+
+  .screen h1 {
+    font-size: clamp(28px, 6vw, 52px);
+  }
+
+  #lignes {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 980px;
+    padding: 10px 6px;
+  }
+
+  .ligne {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 64px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: clamp(11px, 2.6vw, 26px);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    opacity: .4;
+    transition: transform .15s, opacity .15s;
+    overflow: hidden;
+    background: none;
+  }
+
+  .ligne img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  .ligne.on {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+
+  #q {
+    width: min(100%, 560px);
+    font: inherit;
+    font-size: 22px;
+    color: #08007C;
+    border: 3px solid #08007C;
+    border-radius: 40px;
+    padding: 14px 22px;
+    outline: none;
+    background: #fff;
+  }
+
+  #q::placeholder {
+    color: #08007C;
+    opacity: .45;
+  }
+
+  #q:focus-visible {
+    box-shadow: 0 0 0 4px #08007C33;
+  }
+
+  #res {
+    width: min(100%, 560px);
+    height: 36vh;
+    overflow-y: auto;
+    list-style: none;
+    padding: 0;
+  }
+
+  #res li {
+    padding: 12px 22px;
+    font-size: 20px;
+    cursor: pointer;
+    border-bottom: 1px solid #08007C22;
+  }
+
+  #res li:hover,
+  #res li:focus-visible {
+    background: #08007C12;
+    outline: none;
+  }
+
+  #res .info {
+    opacity: .5;
+    cursor: default;
+  }
+
+  #dlist {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: min(100%, 560px);
+  }
+
+  .btn {
+    font: inherit;
+    font-size: clamp(20px, 4vw, 30px);
+    color: #08007C;
+    background: #fff;
+    border: 3px solid #08007C;
+    border-radius: 40px;
+    padding: 16px 24px;
+    cursor: pointer;
+  }
+
+  .btn:hover,
+  .btn:focus-visible {
+    background: #08007C;
+    color: #fff;
+    outline: none;
+  }
+
+  .btn.ghost {
+    border-color: transparent;
+    font-size: 18px;
+    opacity: .6;
+  }
+
+  #dmsg {
+    opacity: .6;
+    font-size: 20px;
+    text-align: center;
+  }
+
+  #board {
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: 22% 1fr 6%;
+    background: #000;
+    color: #fff;
+  }
+
+  #head {
+    background: #f5f5f5;
+    color: #000;
+    display: flex;
+    align-items: center;
+    gap: 2.2vh;
+    padding: 0 3vw;
+    min-width: 0;
+  }
+
+  #head .logos {
+    display: flex;
+    align-items: center;
+    gap: 1.2vh;
+    height: 70%;
+    flex: 0 0 auto;
+  }
+
+  .rond {
+    height: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 4.6vh;
+    overflow: hidden;
+  }
+
+  .rond.m {
+    border: .7vh solid #000;
+    background: #fff;
+    color: #000;
+  }
+
+  .rond img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  #dir {
+    font-size: clamp(26px, 8vh, 90px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-weight: inherit;
+    color: inherit;
+    text-align: left;
+    min-width: 0;
+  }
+
+  #mid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 0 3vw;
+  }
+
+  .col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2vh;
+    padding-left: 2vw;
+    position: relative;
+  }
+
+  .col + .col::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 25%;
+    height: 50%;
+    width: .7vh;
+    background: #fff;
+    border-radius: 1vh;
+  }
+
+  .lab {
+    font-size: clamp(14px, 3.2vh, 34px);
+  }
+
+  .lab sup {
+    font-size: .6em;
+  }
+
+  .val {
+    display: flex;
+    align-items: center;
+    min-height: 30vh;
+    font-size: clamp(90px, 32vh, 420px);
+    line-height: 1;
+    color: #ffd04a;
+  }
+
+  #bar {
+    background: var(--c);
+  }
+
+  #back {
+    position: fixed;
+    right: 12px;
+    top: 12px;
+    background: #0008;
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    opacity: .35;
+  }
+
+  #back:hover {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<div id="menu" class="screen">
+  <h1>Ton arrêt</h1>
+  <div id="lignes" role="listbox" aria-label="Ligne"></div>
+  <input id="q" type="search" placeholder="Rechercher une station" autocomplete="off">
+  <ul id="res"></ul>
+</div>
+
+<div id="dirs" class="screen hidden">
+  <h1>Direction</h1>
+  <div id="dmsg">Chargement…</div>
+  <div id="dlist"></div>
+  <button class="btn ghost" id="dback">Changer d’arrêt</button>
+</div>
+
+<div id="board" class="hidden">
+  <div id="head">
+    <div class="logos">
+      <div class="rond m" id="lm">M</div>
+      <div class="rond" id="ll"></div>
+    </div>
+    <button id="dir" title="Changer de direction"></button>
+  </div>
+  <div id="mid">
+    <div class="col">
+      <div class="lab">1<sup>er</sup> métro</div>
+      <div class="val" id="v1"></div>
+    </div>
+    <div class="col">
+      <div class="lab">2<sup>e</sup> métro</div>
+      <div class="val" id="v2"></div>
+    </div>
+  </div>
+  <div id="bar"></div>
+  <button id="back">Changer d’arrêt</button>
+</div>
+
+<script>
+  const WORKER_URL = "https://hezaqqq-github-io.prochains-metros.workers.dev";
+
+  const LIGNES = {
+    "1": "#FFCE00", "2": "#0064B0", "3": "#9F9825", "3bis": "#98D4E2", "4": "#C04191", "5": "#F28E42",
+    "6": "#83C491", "7": "#F3A4BA", "7bis": "#83C491", "8": "#CEADD2", "9": "#D5C900", "10": "#E3B32A",
+    "11": "#8D5E2A", "12": "#00814F", "13": "#98D4E2", "14": "#662483"
+  };
+  const ORDRE = ["1", "2", "3", "3bis", "4", "5", "6", "7", "7bis", "8", "9", "10", "11", "12", "13", "14"];
+  const SOMBRES = ["2", "11", "12", "14"];
+  const DATA = "https://data.iledefrance-mobilites.fr/api/explore/v2.1/catalog/datasets/arrets-lignes/exports/json";
+  
+
+  const $ = id => document.getElementById(id);
+  const show = id => ["menu", "dirs", "board"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+  let ligne = "10", stations = [], station = null, curDest = null, passages = [], timer = null;
+
+  function pastille(el, l) {
+    el.style.background = LIGNES[l];
+    el.style.color = SOMBRES.includes(l) ? "#fff" : "#000";
+    el.textContent = l.replace("bis", "b");
+  }
+
+  function logoLigne(el, l) {
+    el.innerHTML = "";
+    const img = new Image();
+    img.alt = l;
+    img.onload = () => el.appendChild(img);
+    img.onerror = () => pastille(el, l);
+    img.src = `logos/ligne_${l}.svg`;
+  }
+
+  function logoMetro() {
+    const img = new Image();
+    img.onload = () => { 
+      const e = $("lm"); 
+      e.className = "rond"; 
+      e.style.background = "none"; 
+      e.innerHTML = ""; 
+      e.appendChild(img); 
+    };
+    img.src = "logos/logo_metro.svg";
+  }
+
+  function buildLignes() {
+    const box = $("lignes");
+    ORDRE.forEach(l => {
+      const b = document.createElement("button");
+      b.className = "ligne" + (l === ligne ? " on" : "");
+      b.setAttribute("role", "option");
+      b.setAttribute("aria-label", "Ligne " + l);
+      logoLigne(b, l);
+      b.onclick = () => { 
+        ligne = l; 
+        [...box.children].forEach(c => c.classList.toggle("on", c === b)); 
+        loadStations(); 
+      };
+      box.appendChild(b);
+    });
+  }
+
+  async function loadStations() {
+    stations = [];
+    $("res").innerHTML = '<li class="info">Chargement…</li>';
+    const sn = ligne === "3bis" ? '"3B","3BIS"' : ligne === "7bis" ? '"7B","7BIS"' : `"${ligne}"`;
+    try {
+      let rows = [];
+      for (const mode of ["Metro", "Métro"]) {
+        const p = new URLSearchParams({select: "stop_id,stop_name", where: `mode="${mode}" and shortname in (${sn})`});
+        rows = await (await fetch(DATA + "?" + p)).json();
+        if (rows.length) break;
+      }
+      const m = {};
+      rows.forEach(r => { 
+        const n = r.stop_name.trim(); 
+        (m[n] = m[n] || new Set()).add(String(r.stop_id).split(":").pop()); 
+      });
+      stations = Object.keys(m).sort((a, b) => a.localeCompare(b, "fr")).map(n => ({name: n, ids: [...m[n]]}));
+    } catch (e) { 
+      stations = []; 
+    }
+    renderResults();
+  }
+
+  const norm = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  function renderResults() {
+    const q = norm($("q").value.trim()), ul = $("res");
+    ul.innerHTML = "";
+    const list = stations.filter(s => norm(s.name).includes(q)).slice(0, 60);
+    if (!list.length) { 
+      ul.innerHTML = '<li class="info">Aucune station trouvée</li>'; 
+      return; 
+    }
+    list.forEach(s => {
+      const li = document.createElement("li");
+      li.tabIndex = 0;
+      li.textContent = s.name;
+      li.onclick = () => chooseStation(s);
+      li.onkeydown = e => { if (e.key === "Enter") chooseStation(s); };
+      ul.appendChild(li);
+    });
+  }
+
+  async function fetchPassages() {
+    const all = await Promise.all(station.ids.slice(0, 4).map(async id => {
+      const ref = encodeURIComponent(`STIF:StopPoint:Q:${id}:`);
+      const r = await fetch(`${WORKER_URL}?MonitoringRef=${ref}`);
+      const d = await r.json();
+      return d.Siri.ServiceDelivery.StopMonitoringDelivery[0].MonitoredStopVisit || [];
+    }));
+    return all.flat().map(v => {
+      const j = v.MonitoredVehicleJourney, c = j.MonitoredCall || {};
+      const t = c.ExpectedDepartureTime || c.ExpectedArrivalTime || c.AimedDepartureTime;
+      const dest = j.DestinationName?.[0]?.value || j.DirectionName?.[0]?.value || "";
+      return {t: new Date(t).getTime(), dest};
+    }).filter(p => p.t).sort((a, b) => a.t - b.t);
+  }
+
+  async function chooseStation(s) {
+    station = s; curDest = null; passages = [];
+    clearInterval(timer);
+    show("dirs");
+    $("dmsg").textContent = "Chargement…";
+    $("dmsg").classList.remove("hidden");
+    $("dlist").innerHTML = "";
+    try {
+      passages = await fetchPassages();
+      const dests = [...new Set(passages.map(p => p.dest).filter(Boolean))];
+      if (!dests.length) { 
+        $("dmsg").textContent = "Aucun passage prévu pour le moment."; 
+        addBtn("Afficher quand même", () => openBoard(null)); 
+        return; 
+      }
+      $("dmsg").classList.add("hidden");
+      dests.forEach(d => addBtn(d, () => openBoard(d)));
+    } catch (e) {
+      $("dmsg").textContent = "Impossible de récupérer les horaires.";
+      addBtn("Réessayer", () => chooseStation(s));
+    }
+  }
+
+  function addBtn(txt, fn) {
+    const b = document.createElement("button");
+    b.className = "btn"; 
+    b.textContent = txt; 
+    b.onclick = fn;
+    $("dlist").appendChild(b);
+  }
+
+  function openBoard(dest) {
+    curDest = dest;
+    localStorage.setItem("metro", JSON.stringify({ligne, station, dest}));
+    $("board").style.setProperty("--c", LIGNES[ligne]);
+    logoMetro();
+    logoLigne($("ll"), ligne);
+    show("board");
+    render();
+    refresh();
+    clearInterval(timer);
+    timer = setInterval(refresh, 60000);
+  }
+
+  async function refresh() {
+    try { passages = await fetchPassages(); } catch (e) {}
+    render();
+  }
+
+  function render() {
+    $("dir").textContent = curDest || station.name;
+    const mine = passages.filter(p => !curDest || p.dest === curDest).slice(0, 2);
+    [0, 1].forEach(i => {
+      const p = mine[i];
+      $("v" + (i + 1)).textContent = p ? Math.max(0, Math.floor((p.t - Date.now()) / 60000)) : "--";
+    });
+  }
+
+  setInterval(() => !$("board").classList.contains("hidden") && render(), 15000);
+
+  $("dir").onclick = () => chooseStation(station);
+  $("back").onclick = () => { clearInterval(timer); show("menu"); };
+  $("dback").onclick = () => show("menu");
+  $("q").addEventListener("input", renderResults);
+
+  buildLignes();
+  loadStations();
+  
+  try {
+    const s = JSON.parse(localStorage.getItem("metro") || "null");
+    if (s?.station) { 
+      ligne = s.ligne; 
+      station = s.station; 
+      document.querySelectorAll(".ligne").forEach((b, i) => b.classList.toggle("on", ORDRE[i] === ligne)); 
+      openBoard(s.dest); 
+    }
+  } catch (e) {}
+</script>
+</body>
+</html>
