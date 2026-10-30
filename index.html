@@ -57,6 +57,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    justify-content: safe center;
     gap: 3vh;
     padding: 20px;
   }
@@ -204,7 +205,7 @@
     outline: none;
   }
 
-  .btn.ghost {
+  .btn.lien {
     border-color: transparent;
     font-size: 18px;
     opacity: .6;
@@ -335,8 +336,8 @@
 
   #ctrl {
     position: fixed;
-    right: 12px;
-    top: 12px;
+    right: calc(env(safe-area-inset-right, 0px) + 12px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
     display: flex;
     gap: 8px;
     opacity: 0;
@@ -354,9 +355,9 @@
     color: #fff;
     border: none;
     border-radius: 20px;
-    padding: 6px 14px;
+    padding: 5px 12px;
     font: inherit;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
   }
 
@@ -427,6 +428,57 @@
     .val { min-height: 0; font-size: 26vw; }
     .val.long { font-size: 14vw; }
   }
+
+  /* ===== Métro : horloge, clignotement, fourches, animations ===== */
+  @keyframes blink { 0% { opacity: 1; } 50% { opacity: .22; } }
+
+  #head { grid-row: 1; position: relative; --ck: clamp(18px, 5vh, 56px); }
+  #mid, #fork { grid-row: 2; }
+  #bar { grid-row: 3; }
+  .btn { white-space: pre-line; }
+
+  #menu h1, #legal { margin-top: auto; }
+  /* Écran Direction : tout reste centré, "Changer d'arrêt" juste sous les boutons */
+  #dback { width: min(100%, 560px); position: sticky; bottom: 0; z-index: 5; background: #fff; touch-action: manipulation; cursor: pointer; pointer-events: auto; }
+  #dmid { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+  #legal { width: min(100%, 560px); font-size: 12px; line-height: 1.4; text-align: center; opacity: .55; padding-top: 8px; }
+  @media (max-width: 700px) and (orientation: portrait) { #menu h1 { margin-top: 0; } }
+
+  #clock {
+    display: none; position: absolute;
+    top: env(safe-area-inset-top, 0px); right: calc(env(safe-area-inset-right, 0px) + 1.5vw);
+    background: #000; color: #ffd04a; font-size: var(--ck); line-height: 1;
+    padding: .32em .45em; border-radius: 0 0 .3em .3em;
+  }
+  #board.mt #clock { display: block; }
+  #board.mt #dir { padding-right: calc(var(--ck) * 3.5); }
+  .colon { animation: blink 1s steps(1, end) infinite; }
+
+  .val.zero, .fv.zero > .in:not(.ghost) { animation: blink 1s steps(1, end) infinite; }
+  .ghost { position: absolute; pointer-events: none; }
+
+  #dir.two { display: flex; flex-direction: column; justify-content: center; font-size: clamp(18px, 5.4vh, 56px); line-height: 1.1; white-space: normal; }
+  #dir.two > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  #fork { display: grid; grid-template-rows: repeat(4, 1fr); gap: 1vh; padding: 1.5vh 3vw; min-height: 0; }
+  .fr { display: grid; grid-template-columns: 1fr 21%; gap: 0; min-height: 0; background: #fff; border-left: 1.6vh solid var(--bc); border-radius: .6vh; padding: .9vh; }
+  .fd, .fv { position: relative; overflow: hidden; display: flex; align-items: center; min-width: 0; }
+  .fd { color: #08007C; padding: 0 1.6vw; font-size: clamp(18px, 5.6vh, 60px); }
+  .fv { justify-content: center; color: #ffd04a; background: #000; border-radius: .3vh; font-size: clamp(28px, 10vh, 130px); line-height: 1; }
+  .fv.long { font-size: clamp(22px, 7vh, 90px); }
+  .in { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #fork { position: relative; overflow: hidden; }
+  .fr.empty { opacity: .3; }
+  .fr.ghost { pointer-events: none; z-index: 2; }
+  .fd .ghost, .fv .ghost { inset: 0; display: flex; align-items: center; justify-content: inherit; padding: inherit; }
+
+  @media (max-width: 700px) and (orientation: portrait) {
+    #head { --ck: 4.8vw; }
+    #dir.two { font-size: 4.6vw; }
+    .fd { font-size: 4.8vw; padding: 0 3vw; }
+    .fv { font-size: 12vw; }
+    .fv.long { font-size: 8vw; }
+  }
 </style>
 </head>
 <body>
@@ -437,13 +489,16 @@
   <div id="lignes2" role="listbox" aria-label="RER et Transilien"></div>
   <input id="q" type="search" placeholder="Rechercher une station" autocomplete="off">
   <ul id="res"></ul>
+  <p id="legal">Ce site n’a aucune affiliation avec la RATP, Île-de-France Mobilités ou la SNCF. Les noms, logos et marques appartiennent à leurs propriétaires respectifs. Les horaires proviennent des données ouvertes d’Île-de-France Mobilités et sont donnés à titre indicatif.</p>
 </div>
 
 <div id="dirs" class="screen hidden">
   <h1>Direction</h1>
-  <div id="dmsg">Chargement…</div>
-  <div id="dlist"></div>
-  <button class="btn ghost" id="dback">Changer d’arrêt</button>
+  <div id="dmid">
+    <div id="dmsg">Chargement…</div>
+    <div id="dlist"></div>
+  </div>
+  <button class="btn lien" id="dback">Changer d’arrêt</button>
 </div>
 
 <div id="board" class="hidden">
@@ -453,6 +508,7 @@
       <div class="rond" id="ll"></div>
     </div>
     <div id="dir"></div>
+    <div id="clock"><span id="ckh">00</span><span class="colon">:</span><span id="ckm">00</span></div>
   </div>
   <div id="mid">
     <div class="col">
@@ -464,6 +520,7 @@
       <div class="val" id="v2"></div>
     </div>
   </div>
+  <div id="fork" class="hidden"></div>
   <div id="bar"></div>
   <div id="ctrl">
     <button id="chdir">Changer de direction</button>
@@ -493,11 +550,26 @@
   const MARQUE = {metro: "M", rer: "RER", transilien: "T"};
   const DATA = "https://data.iledefrance-mobilites.fr/api/explore/v2.1/catalog/datasets/arrets-lignes/exports/json";
 
+  const FORKS = {
+    "13": [/gennevilliers|courtilles|asnieres/, /saint-?denis|universite/],
+    "7": [/villejuif|aragon/, /ivry/]
+  };
+  const FORK_COL = [{bg: "#FFCE00", fg: "#000"}, {bg: "#5291CE", fg: "#fff"}];
+  const mins = p => Math.max(0, Math.floor((p.t - Date.now()) / 60000));
+  let prevN = null, prevR = null;
+  const GRACE_MS = 10000; 
+  const BLINK_MS = 30000;
+  const key = p => p.id || p.dest + "|" + p.t;
+  const live = p => p.t + GRACE_MS > Date.now();
+  const blinking = p => mins(p) === 0 && p.t - Date.now() <= BLINK_MS;
+
   const $ = id => document.getElementById(id);
   const show = id => ["menu", "dirs", "board"].forEach(s => $(s).classList.toggle("hidden", s !== id));
   const REFRESH_MS = 15000;
   let busy = false, hideT = null;
   let ligne = "10", stations = [], station = null, curDest = null, passages = [], timer = null;
+  let stationsLigne = null, opts = [], optsKey = null, routeTok = 0, lastFetch = 0, prevCnt = null;
+  const FETCH_TIMEOUT_MS = 10000;
 
   function pastille(el, l) {
     el.style.background = LIGNES[l];
@@ -555,14 +627,12 @@
       list.forEach(l => {
         const b = document.createElement("button");
         b.className = "ligne" + (l === ligne ? " on" : "");
+        b.type = "button";
+        b.dataset.l = l;
         b.setAttribute("role", "option");
         b.setAttribute("aria-label", (KIND[l] === "rer" ? "RER " : "Ligne ") + l);
         logoLigne(b, l);
-        b.onclick = () => {
-          ligne = l;
-          document.querySelectorAll(".ligne").forEach(c => c.classList.toggle("on", c === b));
-          loadStations();
-        };
+        b.onclick = () => go("ligne/" + l);
         box.appendChild(b);
       });
     });
@@ -581,6 +651,7 @@
   async function loadStations() {
     const tok = ++loadTok, kind = KIND[ligne];
     stations = [];
+    stationsLigne = null;
     $("res").innerHTML = '<li class="info">Chargement…</li>';
     const sn = ligne === "3bis" ? '"3B","3BIS"' : ligne === "7bis" ? '"7B","7BIS"' : `"${ligne}"`;
     let list = [];
@@ -592,7 +663,7 @@
           if (rows.length) break;
         }
       } else {
-        // RER / Transilien : zones d'arrêt "IDFM:monomodalStopPlace:XXXX"
+
         const where = `shortname in (${sn})`;
         rows = (await getRows(where)) || [];
         if (rows.length) console.info("[stations] champs disponibles :", Object.keys(rows[0]).join(", "));
@@ -620,6 +691,7 @@
     }
     if (tok !== loadTok) return;
     stations = list;
+    stationsLigne = ligne;
     renderResults();
   }
 
@@ -649,8 +721,8 @@
       const li = document.createElement("li");
       li.tabIndex = 0;
       li.textContent = s.name;
-      li.onclick = () => chooseStation(s);
-      li.onkeydown = e => { if (e.key === "Enter") chooseStation(s); };
+      li.onclick = () => go(lpath() + "/" + slug(s.name));
+      li.onkeydown = e => { if (e.key === "Enter") go(lpath() + "/" + slug(s.name)); };
       ul.appendChild(li);
     });
   }
@@ -659,8 +731,14 @@
     const pre = (station.kind || "metro") === "metro" ? "STIF:StopPoint:Q:" : "STIF:StopArea:SP:";
     const all = await Promise.all(station.ids.slice(0, 4).map(async id => {
       const ref = encodeURIComponent(`${pre}${id}:`);
-      const r = await fetch(`${WORKER_URL}?MonitoringRef=${ref}`);
-      const d = await r.json();
+      const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), FETCH_TIMEOUT_MS);
+      let d;
+      try {
+        const r = await fetch(`${WORKER_URL}?MonitoringRef=${ref}`, {signal: ctl.signal});
+        d = await r.json();
+      } finally {
+        clearTimeout(to);
+      }
       return d.Siri.ServiceDelivery.StopMonitoringDelivery[0].MonitoredStopVisit || [];
     }));
     const lids = station.lids || [];
@@ -672,31 +750,104 @@
       const j = v.MonitoredVehicleJourney, c = j.MonitoredCall || {};
       const t = c.ExpectedDepartureTime || c.ExpectedArrivalTime || c.AimedDepartureTime || c.AimedArrivalTime;
       const dest = fixEnc(j.DestinationName?.[0]?.value || j.DirectionName?.[0]?.value || "");
-      return {t: new Date(t).getTime(), dest, off: c.DepartureStatus === "cancelled"};
+      const id = v.ItemIdentifier || j.FramedVehicleJourneyRef?.DatedVehicleJourneyRef || "";
+      return {t: new Date(t).getTime(), dest, id, off: c.DepartureStatus === "cancelled"};
     }).filter(p => p.t && !p.off).sort((a, b) => a.t - b.t);
   }
 
-  async function chooseStation(s) {
-    station = s; curDest = null; passages = [];
+  const slug = t => norm(t).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const canon = t => norm(t).replace(/[^a-z0-9]/g, "");
+  const lpath = () => "ligne/" + ligne;
+  const spath = () => lpath() + "/" + slug(station.name);
+  const go = path => { location.hash = "#/" + path; };
+
+  const isHere = (d, name) => {
+    const a = canon(d), b = canon(name);
+    return !!a && !!b && (a === b || a.startsWith(b) || b.startsWith(a));
+  };
+
+  function setLigne(l) {
+    ligne = l;
+    document.querySelectorAll(".ligne").forEach(c => c.classList.toggle("on", c.dataset.l === l));
+  }
+
+  async function loadDirs(s) {
+    station = s;
+    optsKey = null;
+    passages = await fetchPassages();
+    const dests = [...new Set(passages.map(p => p.dest).filter(Boolean))].filter(d => !isHere(d, s.name));
+    let o = dests.map(d => ({label: d, val: d, slug: slug(d)}));
+    const fk = FORKS[ligne];
+    if (fk) {
+      const g = fk.map(re => dests.filter(d => re.test(norm(d))));
+      if (g[0].length && g[1].length) {
+        const used = [...g[0], ...g[1]];
+        o = [{label: g[0][0] + "\n" + g[1][0], val: {a: g[0], b: g[1]}, slug: "fourche"},
+          ...dests.filter(d => !used.includes(d)).map(d => ({label: d, val: d, slug: slug(d)}))];
+      }
+    }
+    opts = o;
+    optsKey = ligne + "|" + s.name;
+    return o;
+  }
+
+  async function showDirs(s, my) {
+    curDest = null;
     clearInterval(timer);
     show("dirs");
     $("dmsg").textContent = "Chargement…";
     $("dmsg").classList.remove("hidden");
     $("dlist").innerHTML = "";
     try {
-      passages = await fetchPassages();
-      const dests = [...new Set(passages.map(p => p.dest).filter(Boolean))];
-      if (!dests.length) {
+      const o = await loadDirs(s);
+      if (my !== routeTok) return;
+      $("dlist").innerHTML = "";
+      if (!o.length) {
         $("dmsg").textContent = "Aucun passage prévu pour le moment.";
-        addBtn("Afficher quand même", () => openBoard(null));
+        addBtn("Afficher quand même", () => go(spath() + "/tous"));
         return;
       }
       $("dmsg").classList.add("hidden");
-      dests.forEach(d => addBtn(d, () => openBoard(d)));
+      o.forEach(x => addBtn(x.label, () => go(spath() + "/" + x.slug)));
     } catch (e) {
+      if (my !== routeTok) return;
       $("dmsg").textContent = "Impossible de récupérer les horaires.";
-      addBtn("Réessayer", () => chooseStation(s));
+      addBtn("Réessayer", () => showDirs(s, routeTok));
     }
+  }
+
+  async function route() {
+    const my = ++routeTok;
+    const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
+    const l = parts[0] === "ligne" && LIGNES[parts[1]] ? parts[1] : null;
+    if (l && l !== ligne) setLigne(l);
+
+    if (!l || !parts[2]) {
+      clearInterval(timer);
+      show("menu");
+      if (stationsLigne !== ligne) loadStations();
+      return;
+    }
+    if (stationsLigne !== ligne) {
+      await loadStations();
+      if (my !== routeTok || stationsLigne !== ligne) return;
+    }
+    const s = stations.find(x => slug(x.name) === parts[2]);
+    if (!s) { show("menu"); return; }
+
+    if (!parts[3]) return showDirs(s, my);
+
+    if (parts[3] === "tous") {
+      station = s;
+      return openBoard(null);
+    }
+    if (!station || optsKey !== ligne + "|" + s.name) {
+      try { await loadDirs(s); } catch (e) { return showDirs(s, my); }
+      if (my !== routeTok) return;
+    }
+    const o = opts.find(x => x.slug === parts[3]);
+    if (!o) return showDirs(s, my);
+    openBoard(o.val);
   }
 
   function addBtn(txt, fn) {
@@ -709,6 +860,7 @@
 
   function openBoard(dest) {
     curDest = dest;
+    prevN = null; prevR = null; prevCnt = null; $("dir").dataset.k = "";
     $("board").style.setProperty("--c", LIGNES[ligne]);
     const mot = MOT[KIND[ligne]];
     $("l1").innerHTML = "1<sup>er</sup> " + mot;
@@ -727,9 +879,16 @@
   async function refresh() {
     if (busy || document.hidden) return;
     busy = true;
+    lastFetch = Date.now();
     try { passages = await fetchPassages(); } catch (e) {}
     busy = false;
     render();
+  }
+
+  function kick(count, wanted) {
+    const dropped = prevCnt !== null && count < prevCnt;
+    prevCnt = count;
+    if (dropped && count < wanted && Date.now() - lastFetch > 4000) refresh();
   }
 
   function wake() {
@@ -748,28 +907,138 @@
       ? String(min)
       : Math.floor(min / 60) + "h" + (min % 60 ? String(min % 60).padStart(2, "0") : "");
 
-  function render() {
-    $("dir").textContent = curDest || station.name;
-    const mine = passages.filter(p => !curDest || p.dest === curDest).slice(0, 2);
-    [0, 1].forEach(i => {
-      const p = mine[i], el = $("v" + (i + 1));
-      const t = p ? fmt(Math.max(0, Math.floor((p.t - Date.now()) / 60000))) : "--";
-      el.textContent = t;
-      el.classList.toggle("long", t.length > 2);
-    });
+  function slideLeft(oldTxt, oldCls) {
+    const a = $("v1"), b = $("v2");
+    const d = b.getBoundingClientRect().left - a.getBoundingClientRect().left;
+    const o = {duration: 600, easing: "cubic-bezier(.4,0,.2,1)"};
+    const g = document.createElement("div");
+    g.className = "val ghost " + oldCls;
+    g.textContent = oldTxt;
+    g.style.cssText = `left:${a.offsetLeft}px;top:${a.offsetTop}px;width:${a.offsetWidth}px;height:${a.offsetHeight}px`;
+    a.parentNode.appendChild(g);
+    g.animate([{transform: "none", opacity: 1}, {transform: `translateX(${-d}px)`, opacity: 0}], {...o, fill: "forwards"}).onfinish = () => g.remove();
+    a.animate([{transform: `translateX(${d}px)`}, {transform: "none"}], o);
+    b.animate([{transform: `translateX(${d}px)`, opacity: 0}, {transform: "none", opacity: 1}], o);
   }
 
-  setInterval(() => !$("board").classList.contains("hidden") && render(), 15000);
+  const forkRows = [];
+  const STEP = {duration: 600, easing: "cubic-bezier(.4,0,.2,1)"};
 
-  $("chdir").onclick = () => chooseStation(station);
+  function buildFork() {
+    for (let i = 0; i < 4; i++) {
+      const r = document.createElement("div");
+      r.className = "fr";
+      r.innerHTML = '<div class="fd"><div class="in"></div></div><div class="fv"><div class="in"></div></div>';
+      $("fork").appendChild(r);
+      forkRows.push(r);
+    }
+  }
+
+  function renderFork() {
+    const d = curDest, dir = $("dir"), fork = $("fork");
+    const dk = d.a[0] + "|" + d.b[0];
+    if (dir.dataset.k !== dk) {
+      dir.dataset.k = dk;
+      dir.className = "two";
+      dir.innerHTML = "";
+      [d.a[0], d.b[0]].forEach(n => {
+        const s = document.createElement("div");
+        s.textContent = n;
+        dir.appendChild(s);
+      });
+    }
+    const names = [...d.a, ...d.b];
+    const all = passages.filter(p => live(p) && names.includes(p.dest)).sort((x, y) => x.t - y.t);
+    const list = all.slice(0, 4);
+    kick(all.length, 4);
+    const cur = list.map(p => ({key: key(p), zero: mins(p) === 0}));
+    const step = forkRows[1].offsetTop - forkRows[0].offsetTop;
+
+    const ghosts = [];
+    if (prevR) prevR.forEach((x, i) => {
+      if (!x.zero || cur.some(c => c.key === x.key)) return;
+      const r = forkRows[i], g = r.cloneNode(true);
+      g.classList.add("ghost");
+      g.querySelector(".fv").classList.remove("zero");
+      g.style.cssText = r.style.cssText + `;left:${r.offsetLeft}px;top:${r.offsetTop}px;width:${r.offsetWidth}px;height:${r.offsetHeight}px`;
+      ghosts.push({g, out: r.offsetTop + r.offsetHeight});
+    });
+
+    forkRows.forEach((row, i) => {
+      const p = list[i], k = p && d.a.includes(p.dest) ? 0 : 1;
+      row.style.setProperty("--bc", p ? FORK_COL[k].bg : "#333");
+      row.style.setProperty("--tc", p ? FORK_COL[k].fg : "#fff");
+      row.classList.toggle("empty", !p);
+      const fd = row.children[0], fv = row.children[1];
+      const t = p ? fmt(mins(p)) : "--";
+      fd.firstChild.textContent = p ? p.dest : "";
+      fv.firstChild.textContent = t;
+      fv.classList.toggle("zero", !!p && blinking(p));
+      fv.classList.toggle("long", t.length > 2);
+    });
+
+    if (ghosts.length && step > 0) {
+      ghosts.forEach(({g, out}) => {
+        fork.appendChild(g);
+        g.animate([{transform: "none", opacity: 1}, {transform: `translateY(${-out}px)`, opacity: 0}], {...STEP, fill: "forwards"}).onfinish = () => g.remove();
+      });
+      cur.forEach((c, j) => {
+        const pi = prevR.findIndex(x => x.key === c.key);
+        if (pi === j) return;
+        const from = pi >= 0 ? (pi - j) * step : step;
+        forkRows[j].animate([{transform: `translateY(${from}px)`, opacity: pi >= 0 ? 1 : 0}, {transform: "none", opacity: 1}], STEP);
+      });
+    }
+    prevR = cur;
+  }
+
+  function render() {
+    const metro = KIND[ligne] === "metro";
+    const fk = !!curDest && typeof curDest === "object";
+    $("board").classList.toggle("mt", metro);
+    $("mid").classList.toggle("hidden", fk);
+    $("fork").classList.toggle("hidden", !fk);
+    if (fk) return renderFork();
+    const dir = $("dir");
+    dir.className = "";
+    dir.textContent = curDest || station.name;
+    const mine = passages.filter(p => live(p) && (!curDest || p.dest === curDest));
+    kick(mine.length, 2);
+    const v1 = $("v1"), oldTxt = v1.textContent, oldCls = v1.classList.contains("long") ? "long" : "";
+    const cur = mine[0] ? {key: key(mine[0]), zero: mins(mine[0]) === 0} : null;
+    const go = metro && !!prevN && prevN.zero && (!cur || cur.key !== prevN.key);
+    [0, 1].forEach(i => {
+      const p = mine[i], el = $("v" + (i + 1));
+      const t = p ? fmt(mins(p)) : "--";
+      el.textContent = t;
+      el.classList.toggle("long", t.length > 2);
+      el.classList.toggle("zero", metro && !!p && blinking(p));
+    });
+    if (go) slideLeft(oldTxt, oldCls);
+    prevN = cur;
+  }
+
+  setInterval(() => !$("board").classList.contains("hidden") && render(), 1000);
+
+  $("chdir").onclick = () => go(spath());
   ["mousemove", "touchstart", "keydown"].forEach(ev => document.addEventListener(ev, wake, {passive: true}));
   document.addEventListener("visibilitychange", () => { if (!document.hidden && !$("board").classList.contains("hidden")) refresh(); });
-  $("back").onclick = () => { clearInterval(timer); show("menu"); };
-  $("dback").onclick = () => show("menu");
+  $("back").onclick = () => go(lpath());
+  $("dback").onclick = () => go(lpath());
+  window.addEventListener("hashchange", route);
   $("q").addEventListener("input", renderResults);
 
+  const tick = () => {
+    const d = new Date(), h = String(d.getHours()).padStart(2, "0"), m = String(d.getMinutes()).padStart(2, "0");
+    if ($("ckh").textContent !== h) $("ckh").textContent = h;
+    if ($("ckm").textContent !== m) $("ckm").textContent = m;
+  };
+  tick();
+  setInterval(tick, 1000);
+
+  buildFork();
   buildLignes();
-  loadStations();
+  route();
 </script>
 </body>
 </html>
