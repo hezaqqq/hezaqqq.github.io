@@ -6,6 +6,7 @@
 <title>Prochains métros</title>
 <link rel="icon" type="image/svg+xml" href="logos/logo_metro.svg">
 <style>
+  /* Load the display font used across the page */
 
   @font-face {
     font-family: "Parisine";
@@ -13,6 +14,7 @@
     font-weight: 700;
   }
 
+  /* Keep element sizing predictable */
   * {
     box-sizing: border-box;
     margin: 0;
@@ -47,6 +49,7 @@
     display: none !important;
   }
 
+  /* Style the station and direction selection screens */
   .screen {
     position: fixed;
     inset: 0;
@@ -86,6 +89,7 @@
     overflow: visible;
   }
 
+  /* Make each transit line icon behave like a selectable button */
   .ligne {
     flex: 1 1 0;
     min-width: 0;
@@ -187,6 +191,7 @@
     width: min(100%, 560px);
   }
 
+  /* Give direction choices a consistent button style */
   .btn {
     font: inherit;
     font-size: clamp(20px, 4vw, 30px);
@@ -217,6 +222,7 @@
     text-align: center;
   }
 
+  /* Arrange the live arrival display into header, content, and footer */
   #board {
     position: fixed;
     inset: 0;
@@ -334,6 +340,7 @@
     background: var(--c);
   }
 
+  /* Hide the board controls until the user interacts with the page */
   #ctrl {
     position: fixed;
     right: calc(env(safe-area-inset-right, 0px) + 12px);
@@ -371,25 +378,23 @@
     cursor: none;
   }
 
-  /* ===== Correctifs UI ===== */
-
-  /* Logos du bandeau à taille explicite (la direction reste collée au logo métro) */
+  /* Set explicit header logo sizes and keep the direction beside the metro logo */
   #head { --lg: 15vh; padding-left: max(3vw, env(safe-area-inset-left)); }
   #head .logos { height: auto; gap: 1.2vh; }
   .rond { height: var(--lg); width: var(--lg); flex: none; aspect-ratio: auto; }
   #dir { flex: 1 1 0; text-align: left; color: #08007C; }
 
-  /* Écrans scrollables (menu et directions) */
+  /* Allow the menu and direction screens to scroll */
   .screen { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
   .screen > * { flex-shrink: 0; }
 
-  /* Chiffres longs type "1h05" */
+  /* Make room for longer arrival times such as 1h05 */
   .val.long { font-size: clamp(60px, 20vh, 260px); }
 
-  /* Téléphone en portrait uniquement */
+  /* Apply the compact layout on portrait phones */
   @media (max-width: 700px) and (orientation: portrait) {
 
-    /* Menu : icônes plus grosses, sur plusieurs lignes (6 par ligne) */
+    /* Enlarge line icons and arrange six icons on each row */
     .screen {
       justify-content: flex-start;
       overflow-y: auto;
@@ -409,11 +414,11 @@
       max-width: none;
     }
 
-    /* Liste des arrêts : plus de hauteur fixe, c'est la page qui scrolle */
+    /* Let the page scroll instead of fixing the station list height */
     #res { height: auto; overflow: visible; }
     #q { position: sticky; top: 0; z-index: 2; }
 
-    /* Tableau : logos et chiffres plus petits, direction visible */
+    /* Reduce logo and number sizes while keeping the direction visible */
     #board { grid-template-rows: auto 1fr 4%; }
     #head {
       --lg: 11vw;
@@ -429,7 +434,8 @@
     .val.long { font-size: 14vw; }
   }
 
-  /* ===== Métro : horloge, clignotement, fourches, animations ===== */
+  /* Configure the clock, arrival flashing, split lines, and animations */
+  /* Flash the arrival time when a train is due */
   @keyframes blink { 0% { opacity: 1; } 50% { opacity: .22; } }
 
   #head { grid-row: 1; position: relative; --ck: clamp(18px, 5vh, 56px); }
@@ -438,8 +444,8 @@
   .btn { white-space: pre-line; }
 
   #menu h1, #legal { margin-top: auto; }
-  /* Écran Direction : tout reste centré, "Changer d'arrêt" juste sous les boutons */
-  #dback { width: min(100%, 560px); position: sticky; bottom: 0; z-index: 5; background: #fff; touch-action: manipulation; cursor: pointer; pointer-events: auto; }
+  /* Keep the direction screen centered and place the station button below the choices */
+  #dback { width: min(100%, 560px); position: sticky; bottom: 0; z-index: 5; background: #08007C; color: #fff; border-color: #08007C; opacity: 1; touch-action: manipulation; cursor: pointer; pointer-events: auto; }
   #dmid { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
   #legal { width: min(100%, 560px); font-size: 12px; line-height: 1.4; text-align: center; opacity: .55; padding-top: 8px; }
   @media (max-width: 700px) and (orientation: portrait) { #menu h1 { margin-top: 0; } }
@@ -483,6 +489,7 @@
 </head>
 <body>
 
+<!-- Let the user choose a line and search for a station -->
 <div id="menu" class="screen">
   <h1>Ton arrêt</h1>
   <div id="lignes" role="listbox" aria-label="Ligne"></div>
@@ -492,6 +499,7 @@
   <p id="legal">Ce site n’a aucune affiliation avec la RATP, Île-de-France Mobilités ou la SNCF. Les noms, logos et marques appartiennent à leurs propriétaires respectifs. Les horaires proviennent des données ouvertes d’Île-de-France Mobilités et sont donnés à titre indicatif.</p>
 </div>
 
+<!-- Show the available directions for the selected station -->
 <div id="dirs" class="screen hidden">
   <h1>Direction</h1>
   <div id="dmid">
@@ -501,6 +509,7 @@
   <button class="btn lien" id="dback">Changer d’arrêt</button>
 </div>
 
+<!-- Display live arrival times for the selected direction -->
 <div id="board" class="hidden">
   <div id="head">
     <div class="logos">
@@ -529,9 +538,11 @@
 </div>
 
 <script>
+  // Choose the local worker or the hosted worker for arrival data
   const LOCAL = ["", "localhost", "127.0.0.1"].includes(location.hostname);
   const WORKER_URL = LOCAL ? "http://localhost:8787" : "https://hezaqqq.prochains-metros.workers.dev";
 
+  // Store the colors used for each transit line
   const LIGNES = {
     "1": "#FFCE00", "2": "#0064B0", "3": "#9F9825", "3bis": "#98D4E2", "4": "#C04191", "5": "#F28E42",
     "6": "#83C491", "7": "#F3A4BA", "7bis": "#83C491", "8": "#CEADD2", "9": "#D5C900", "10": "#E3B32A",
@@ -540,6 +551,7 @@
     "H": "#8D5E2A", "J": "#D5C900", "K": "#9F9825", "L": "#CEADD2", "N": "#00A88F",
     "P": "#F28E42", "R": "#F3A4BA", "U": "#B90845", "V": "#9F9825"
   };
+  // Keep metro lines and other rail lines in display order
   const ORDRE = ["1", "2", "3", "3bis", "4", "5", "6", "7", "7bis", "8", "9", "10", "11", "12", "13", "14"];
   const ORDRE2 = ["A", "B", "C", "D", "E", "H", "J", "K", "L", "N", "P", "R", "U", "V"];
   const SOMBRES = ["2", "11", "12", "14", "A", "B", "D", "E", "H", "K", "N", "U", "V"];
@@ -550,17 +562,23 @@
   const MARQUE = {metro: "M", rer: "RER", transilien: "T"};
   const DATA = "https://data.iledefrance-mobilites.fr/api/explore/v2.1/catalog/datasets/arrets-lignes/exports/json";
 
+  // Match destination names that belong to each branch of a split line
   const FORKS = {
     "13": [/gennevilliers|courtilles|asnieres/, /saint-?denis|universite/],
     "7": [/villejuif|aragon/, /ivry/]
   };
   const FORK_COL = [{bg: "#FFCE00", fg: "#000"}, {bg: "#5291CE", fg: "#fff"}];
+  // Convert an arrival timestamp into whole minutes remaining
+  // Convert an arrival timestamp into whole minutes remaining
   const mins = p => Math.max(0, Math.floor((p.t - Date.now()) / 60000));
   let prevN = null, prevR = null;
   const GRACE_MS = 10000; 
-  const BLINK_MS = 30000;
+  // Limit the zero minute flashing to the final ten seconds
+  const BLINK_MS = 10000;
   const key = p => p.id || p.dest + "|" + p.t;
+  // Keep arrivals briefly after their scheduled time to avoid flicker
   const live = p => p.t + GRACE_MS > Date.now();
+  // Blink only during the final ten seconds before the scheduled arrival
   const blinking = p => mins(p) === 0 && p.t - Date.now() <= BLINK_MS;
 
   const $ = id => document.getElementById(id);
@@ -571,13 +589,17 @@
   let stationsLigne = null, opts = [], optsKey = null, routeTok = 0, lastFetch = 0, prevCnt = null;
   const FETCH_TIMEOUT_MS = 10000;
 
+  // Show a colored text badge when a line logo cannot be loaded
   function pastille(el, l) {
+    // Use a colored text badge when the SVG logo is unavailable
     el.style.background = LIGNES[l];
     el.style.color = SOMBRES.includes(l) ? "#fff" : "#000";
     el.textContent = l.replace("bis", "b");
   }
 
+  // Load the logo for a transit line and use a badge as a fallback
   function logoLigne(el, l) {
+    // Clear any previous logo before loading the selected line image
     el.innerHTML = "";
     el.style.background = "";
     el.style.color = "";
@@ -595,16 +617,18 @@
   };
   let logoTok = 0;
   function logoMode(kind) {
+    // Track this request so an older image cannot replace the current one
     const e = $("lm"), tok = ++logoTok;
     const sq = kind === "metro" ? "" : " sq";
     e.className = "rond m" + sq;
     e.style.background = "";
     e.textContent = MARQUE[kind];
     const files = LOGOS[kind];
+    // Try alternative filenames because asset capitalization may differ
     const essai = i => {
       if (tok !== logoTok) return;
       if (i >= files.length) {
-        console.warn("[logo] aucun fichier trouvé dans logos/ parmi :", files.join(", "));
+        console.warn("[logo] no matching file found in logos/ among", files.join(", "));
         return;
       }
       const img = new Image();
@@ -621,6 +645,7 @@
     essai(0);
   }
 
+  // Build the clickable list of transit lines
   function buildLignes() {
     [["lignes", ORDRE], ["lignes2", ORDRE2]].forEach(([id, list]) => {
       const box = $(id);
@@ -640,15 +665,19 @@
 
   let loadTok = 0;
 
+  // Request station records from the open transport dataset
   async function getRows(where, select) {
+    // Build the dataset query and return its JSON records
     const q = select ? {select, where} : {where};
     const d = await (await fetch(DATA + "?" + new URLSearchParams(q))).json();
     if (Array.isArray(d)) return d;
-    console.warn("[stations] réponse inattendue", where, d);
+    console.warn("[stations] unexpected response", where, d);
     return null;
   }
 
+  // Load and group the stations served by the selected line
   async function loadStations() {
+    // Ignore results from older requests if the user switches lines
     const tok = ++loadTok, kind = KIND[ligne];
     stations = [];
     stationsLigne = null;
@@ -666,7 +695,7 @@
 
         const where = `shortname in (${sn})`;
         rows = (await getRows(where)) || [];
-        if (rows.length) console.info("[stations] champs disponibles :", Object.keys(rows[0]).join(", "));
+        if (rows.length) console.info("[stations] available fields", Object.keys(rows[0]).join(", "));
         rows = rows.filter(r => String(r.stop_id).includes("monomodalStopPlace"));
         if (!rows.length) {
           for (const mode of ["Rail", "rail"]) {
@@ -675,7 +704,8 @@
           }
         }
       }
-      if (!rows.length) console.warn("[stations] aucune station trouvée pour", ligne);
+      if (!rows.length) console.warn("[stations] no station found for", ligne);
+      // Merge duplicate records that refer to the same station name
       const m = {};
       rows.forEach(r => {
         const n = r.stop_name.trim();
@@ -686,7 +716,7 @@
       });
       list = Object.keys(m).sort((a, b) => a.localeCompare(b, "fr")).map(n => ({name: n, ids: [...m[n].ids], lids: [...m[n].lids], kind}));
     } catch (e) {
-      console.warn("[stations] erreur", e);
+      console.warn("[stations] error", e);
       list = [];
     }
     if (tok !== loadTok) return;
@@ -697,6 +727,7 @@
 
   const CP1252 = {"€":128,"‚":130,"ƒ":131,"„":132,"…":133,"†":134,"‡":135,"ˆ":136,"‰":137,"Š":138,"‹":139,"Œ":140,"Ž":142,"‘":145,"’":146,"“":147,"”":148,"•":149,"–":150,"—":151,"˜":152,"™":153,"š":154,"›":155,"œ":156,"ž":158,"Ÿ":159};
   function fixEnc(t) {
+    // Repair text that was decoded with the wrong character encoding
     if (!/[ÃÂ]/.test(t)) return t;
     const chars = [...t];
     if (chars.some(c => !(c in CP1252) && c.charCodeAt(0) > 255)) return t;
@@ -707,11 +738,15 @@
     }
   }
 
+  // Remove accents and normalize case for consistent text matching
   const norm = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
+  // Filter the station list using the search field
   function renderResults() {
+    // Normalize accents so searches work with or without them
     const q = norm($("q").value.trim()), ul = $("res");
     ul.innerHTML = "";
+    // Limit the displayed matches to keep the station list manageable
     const list = stations.filter(s => norm(s.name).includes(q)).slice(0, 60);
     if (!list.length) {
       ul.innerHTML = '<li class="info">Aucune station trouvée</li>';
@@ -727,8 +762,11 @@
     });
   }
 
+  // Fetch upcoming arrivals and keep only the selected line
   async function fetchPassages() {
+    // Use the identifier format expected by the selected transport mode
     const pre = (station.kind || "metro") === "metro" ? "STIF:StopPoint:Q:" : "STIF:StopArea:SP:";
+    // Query several known identifiers in parallel to cover station variants
     const all = await Promise.all(station.ids.slice(0, 4).map(async id => {
       const ref = encodeURIComponent(`${pre}${id}:`);
       const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), FETCH_TIMEOUT_MS);
@@ -741,12 +779,14 @@
       }
       return d.Siri.ServiceDelivery.StopMonitoringDelivery[0].MonitoredStopVisit || [];
     }));
+    // Keep only arrivals that belong to the selected line when line IDs exist
     const lids = station.lids || [];
     return all.flat().filter(v => {
       if (!lids.length) return true;
       const lr = v.MonitoredVehicleJourney?.LineRef?.value || "";
       return lids.some(x => lr.includes(x));
     }).map(v => {
+      // Extract the expected time, destination, and stable trip identifier
       const j = v.MonitoredVehicleJourney, c = j.MonitoredCall || {};
       const t = c.ExpectedDepartureTime || c.ExpectedArrivalTime || c.AimedDepartureTime || c.AimedArrivalTime;
       const dest = fixEnc(j.DestinationName?.[0]?.value || j.DirectionName?.[0]?.value || "");
@@ -755,34 +795,43 @@
     }).filter(p => p.t && !p.off).sort((a, b) => a.t - b.t);
   }
 
+  // Turn station and destination names into URL friendly text
+  // Convert names into stable URL fragments without accents or punctuation
   const slug = t => norm(t).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   const canon = t => norm(t).replace(/[^a-z0-9]/g, "");
   const lpath = () => "ligne/" + ligne;
   const spath = () => lpath() + "/" + slug(station.name);
+  // Navigate by changing the URL hash so browser history keeps working
   const go = path => { location.hash = "#/" + path; };
 
+  // Compare normalized names to avoid listing the station itself as a destination
   const isHere = (d, name) => {
     const a = canon(d), b = canon(name);
     return !!a && !!b && (a === b || a.startsWith(b) || b.startsWith(a));
   };
 
   function setLigne(l) {
+    // Update the selected line and highlight its button
     ligne = l;
     document.querySelectorAll(".ligne").forEach(c => c.classList.toggle("on", c.dataset.l === l));
   }
 
+  // Find the destinations available from the chosen station
   async function loadDirs(s) {
+    // Fetch live arrivals first because destination choices come from those records
     station = s;
     optsKey = null;
     passages = await fetchPassages();
+    // Remove empty and duplicate destinations, then exclude the current station
     const dests = [...new Set(passages.map(p => p.dest).filter(Boolean))].filter(d => !isHere(d, s.name));
     let o = dests.map(d => ({label: d, val: d, slug: slug(d)}));
+    // Combine matching destination groups when the selected line has two branches
     const fk = FORKS[ligne];
     if (fk) {
       const g = fk.map(re => dests.filter(d => re.test(norm(d))));
       if (g[0].length && g[1].length) {
         const used = [...g[0], ...g[1]];
-        o = [{label: g[0][0] + "\n" + g[1][0], val: {a: g[0], b: g[1]}, slug: "fourche"},
+        o = [{label: g[0][0] + "\n" + g[1][0], val: {a: g[0], b: g[1]}, slug: slug(g[0][0] + " et " + g[1][0])},
           ...dests.filter(d => !used.includes(d)).map(d => ({label: d, val: d, slug: slug(d)}))];
       }
     }
@@ -791,7 +840,9 @@
     return o;
   }
 
+  // Display direction buttons and handle loading errors
   async function showDirs(s, my) {
+    // Reset the previous board and display a loading state while destinations load
     curDest = null;
     clearInterval(timer);
     show("dirs");
@@ -800,6 +851,7 @@
     $("dlist").innerHTML = "";
     try {
       const o = await loadDirs(s);
+      // Stop if navigation changed while this request was running
       if (my !== routeTok) return;
       $("dlist").innerHTML = "";
       if (!o.length) {
@@ -816,8 +868,11 @@
     }
   }
 
+  // Read the URL and show the matching screen
   async function route() {
+    // Read the current hash and use a token to ignore stale asynchronous navigation
     const my = ++routeTok;
+    // Split the URL into its line, station, and optional destination parts
     const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
     const l = parts[0] === "ligne" && LIGNES[parts[1]] ? parts[1] : null;
     if (l && l !== ligne) setLigne(l);
@@ -851,6 +906,7 @@
   }
 
   function addBtn(txt, fn) {
+    // Create a direction button and attach its navigation action
     const b = document.createElement("button");
     b.className = "btn";
     b.textContent = txt;
@@ -858,7 +914,9 @@
     $("dlist").appendChild(b);
   }
 
+  // Open the live board for the selected destination
   function openBoard(dest) {
+    // Reset previous animation state before showing a new destination
     curDest = dest;
     prevN = null; prevR = null; prevCnt = null; $("dir").dataset.k = "";
     $("board").style.setProperty("--c", LIGNES[ligne]);
@@ -876,7 +934,9 @@
     wake();
   }
 
+  // Update the board with the latest arrival information
   async function refresh() {
+    // Prevent overlapping requests and skip network activity while the page is hidden
     if (busy || document.hidden) return;
     busy = true;
     lastFetch = Date.now();
@@ -886,12 +946,15 @@
   }
 
   function kick(count, wanted) {
+    // Request fresh data if the displayed arrival count unexpectedly drops
     const dropped = prevCnt !== null && count < prevCnt;
     prevCnt = count;
     if (dropped && count < wanted && Date.now() - lastFetch > 4000) refresh();
   }
 
+  // Show the board controls briefly after user activity
   function wake() {
+    // Reveal the controls after interaction, then hide them again after a short pause
     if ($("board").classList.contains("hidden")) return;
     $("ctrl").classList.add("show");
     document.body.classList.remove("idle");
@@ -902,12 +965,15 @@
     }, 3000);
   }
 
+  // Format minutes as a short countdown such as 8 or 1h05
   const fmt = min =>
     min < 60
       ? String(min)
       : Math.floor(min / 60) + "h" + (min % 60 ? String(min % 60).padStart(2, "0") : "");
 
+  // Animate the arrival times when the next train changes
   function slideLeft(oldTxt, oldCls) {
+    // Animate the previous first arrival away as the next arrival moves into place
     const a = $("v1"), b = $("v2");
     const d = b.getBoundingClientRect().left - a.getBoundingClientRect().left;
     const o = {duration: 600, easing: "cubic-bezier(.4,0,.2,1)"};
@@ -924,7 +990,9 @@
   const forkRows = [];
   const STEP = {duration: 600, easing: "cubic-bezier(.4,0,.2,1)"};
 
+  // Create the rows used to display arrivals for both branches
   function buildFork() {
+    // Create reusable rows once instead of rebuilding them on every refresh
     for (let i = 0; i < 4; i++) {
       const r = document.createElement("div");
       r.className = "fr";
@@ -934,7 +1002,9 @@
     }
   }
 
+  // Update the split line board with arrivals from both branches
   function renderFork() {
+    // Render arrivals from both branches in chronological order
     const d = curDest, dir = $("dir"), fork = $("fork");
     const dk = d.a[0] + "|" + d.b[0];
     if (dir.dataset.k !== dk) {
@@ -948,12 +1018,14 @@
       });
     }
     const names = [...d.a, ...d.b];
+    // Keep active arrivals whose destination belongs to either branch
     const all = passages.filter(p => live(p) && names.includes(p.dest)).sort((x, y) => x.t - y.t);
     const list = all.slice(0, 4);
     kick(all.length, 4);
     const cur = list.map(p => ({key: key(p), zero: mins(p) === 0}));
     const step = forkRows[1].offsetTop - forkRows[0].offsetTop;
 
+    // Preserve disappearing zero-minute rows briefly for the exit animation
     const ghosts = [];
     if (prevR) prevR.forEach((x, i) => {
       if (!x.zero || cur.some(c => c.key === x.key)) return;
@@ -992,7 +1064,9 @@
     prevR = cur;
   }
 
+  // Update the standard arrival board or the split line board
   function render() {
+    // Choose the standard board or the split-branch layout for this destination
     const metro = KIND[ligne] === "metro";
     const fk = !!curDest && typeof curDest === "object";
     $("board").classList.toggle("mt", metro);
@@ -1028,7 +1102,9 @@
   window.addEventListener("hashchange", route);
   $("q").addEventListener("input", renderResults);
 
+  // Keep the clock in the header up to date
   const tick = () => {
+    // Update only the clock digits that have actually changed
     const d = new Date(), h = String(d.getHours()).padStart(2, "0"), m = String(d.getMinutes()).padStart(2, "0");
     if ($("ckh").textContent !== h) $("ckh").textContent = h;
     if ($("ckm").textContent !== m) $("ckm").textContent = m;
@@ -1036,6 +1112,7 @@
   tick();
   setInterval(tick, 1000);
 
+  // Create the board elements before the first route is loaded
   buildFork();
   buildLignes();
   route();
